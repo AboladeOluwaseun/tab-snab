@@ -1,122 +1,155 @@
+/* General Reset */
+* {
+  margin: 0;
+  padding: 0.7rem;
+  box-sizing: border-box;
+  font-family: "Arial", sans-serif;
+}
+
+/* Body Styling */
+body {
+  background-color: #f4f4f9;
+  color: #333;
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+}
+
+/* Header Styling */
 .header {
   display: flex;
   align-items: center;
-  padding-bottom: 15px;
-  padding-left: 20px;
-  border-bottom: 2px solid darkred;
+  padding: 20px;
+  background-color: #4a90e2;
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.header-title {
-  padding: 0 5px;
+.header img {
+  height: 80px;
+  margin-right: 15px;
 }
 
-h1 {
-  font-size: 36px;
-}
-
-img {
-  height: 64px;
-  margin: 0 20px 0 0;
-}
-
-h2 {
-  font-size: 26px;
-}
-
-label {
+.header h1 {
   font-size: 16px;
-}
-
-.inner {
-  margin-left: 40px;
-}
-
-.options-list {
-  padding: 0;
-  list-style: none;
-}
-
-.options-list li {
-  padding: 10px;
-}
-
-.time {
-  font-size: 16px;
-}
-
-.limit {
-  display: inline-block;
-  margin: 0;
-  font-size: 12px;
-}
-
-.radioChoice {
-  margin-left: 15px;
-}
-
-.button-container {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px;
-}
-
-.button {
-  padding: 10px;
-  border: 2px solid darkred;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  white-space: nowrap;
-  width: 150px;
-  border-radius: 5px;
-}
-
-.disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.button:hover:not(:disabled) {
-  color: red;
-  background-color: darkred;
-}
-
-#save {
-  font-size: 16px;
-  margin-left: 50px;
-}
-
-#status {
-  color: red;
-  margin-top: 8px;
-  margin-left: 50px;
-  font-size: 14px;
-}
-
-#qualityLi {
-  display: none;
-}
-
-#maxTime {
-  width: 30px;
+  font-weight: 700;
   text-align: center;
 }
 
-.checkbox-container {
-  padding: 10px; 
+/* Button Container */
+.button-container {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin: 20px 0;
 }
 
-.dropdown-container {
-  padding: 10px; 
+.button,
+#clearConversationsButton {
+  padding: 12px 20px;
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  background-color: #4a90e2;
+  color: #fff;
+  border-radius: 25px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
 }
 
+.button:disabled {
+  background-color: #bbb;
+  cursor: not-allowed;
+}
 
-#transcription-container {
+.button:hover:not(:disabled),
+#clearConversationsButton:hover {
+  background-color: #357abd;
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Button Click Effect */
+.button:active:not(:disabled),
+#clearConversationsButton:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Center Clear Conversations Button */
+#clearConversationsButton {
   margin-top: 20px;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+  max-width: 200px;
+}
+
+/* Dropdown Container */
+.dropdown-container {
+  margin: 20px auto;
   padding: 10px;
+  max-width: 400px;
+  text-align: center;
+}
+
+.dropdown-container label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.dropdown-container select {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
   border: 1px solid #ccc;
-  background-color: #f9f9f9;
+  border-radius: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Transcription Container */
+#transcription-container {
+  margin: 20px auto;
+  padding: 20px;
+  border: 1px solid #ddd;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   font-size: 16px;
   line-height: 1.5;
   min-height: 100px;
+  max-width: 600px;
+  overflow-y: auto;
+}
+
+/* Status Message */
+#status {
+  margin-top: 10px;
+  text-align: center;
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+  .header h1 {
+    font-size: 24px;
+  }
+
+  .button,
+  #clearConversationsButton {
+    font-size: 14px;
+    padding: 10px 15px;
+  }
+
+  .dropdown-container select {
+    font-size: 14px;
+    padding: 8px;
+  }
 }

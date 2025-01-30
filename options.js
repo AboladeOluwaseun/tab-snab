@@ -57,7 +57,8 @@ function resampleTo16kHZ(audioData, origSampleRate = 44100) {
     const leftIndex = Math.floor(index).toFixed();
     const rightIndex = Math.ceil(index).toFixed();
     const fraction = index - leftIndex;
-    resampledData[i] = data[leftIndex] + (data[rightIndex] - data[leftIndex]) * fraction;
+    resampledData[i] =
+      data[leftIndex] + (data[rightIndex] - data[leftIndex]) * fraction;
   }
 
   // Return the resampled data
@@ -66,11 +67,14 @@ function resampleTo16kHZ(audioData, origSampleRate = 44100) {
 
 function generateUUID() {
   let dt = new Date().getTime();
-  const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = (dt + Math.random() * 16) % 16 | 0;
-    dt = Math.floor(dt / 16);
-    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-  });
+  const uuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
+    /[xy]/g,
+    function (c) {
+      const r = (dt + Math.random() * 16) % 16 | 0;
+      dt = Math.floor(dt / 16);
+      return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
+    }
+  );
   return uuid;
 }
 
@@ -99,48 +103,56 @@ async function startRecord(option) {
     // Modified WebSocket connection for Rev AI
     socket = new WebSocket(
       `wss://api.rev.ai/speechtotext/v1/stream?` +
-      `access_token=${REV_API_KEY}&` +
-      `content_type=audio/x-raw;layout=interleaved;rate=16000;format=S16LE;channels=1`
-      );
+        `access_token=${"02uuxClbKS4f1bVM4NrW-mLW_y7AHKXc-M2Kklh4DFGUyZsgKQX46vIdJujmtK-ksE_GihLf0kYviOWlP9pzaad-cxOkY"}&` +
+        `content_type=audio/x-raw;layout=interleaved;rate=16000;format=S16LE;channels=1`
+    );
 
     window.recordingSession.socket = socket;
 
-    console.log('WebSocket connection created');
+    console.log("WebSocket connection created");
 
     let isServerReady = false;
 
-    socket.onopen = function(e) {
-        isServerReady = true;
-        console.log('WebSocket connection opened');
+    socket.onopen = function (e) {
+      isServerReady = true;
+      console.log("WebSocket connection opened");
     };
 
-    let completeTranscript = '';
-    let currentPartial = '';
+    let completeTranscript = "";
+    let currentPartial = "";
 
     socket.onmessage = async (event) => {
       const data = JSON.parse(event.data);
-      const transcribedText = data.elements.map(element => element.value).join(" ");
+      const transcribedText = data.elements
+        .map((element) => element.value)
+        .join(" ");
 
       if (data.type === "partial") {
         // Update only the current partial segment
         currentPartial = transcribedText.trim();
         // Display complete transcript plus current partial, with single space
-        updateTranscriptionUI((completeTranscript + ' ' + currentPartial).replace(/\s+/g, ' ').trim());
-      } 
-      else if (data.type === "final") {
+        updateTranscriptionUI(
+          (completeTranscript + " " + currentPartial)
+            .replace(/\s+/g, " ")
+            .trim()
+        );
+      } else if (data.type === "final") {
         // Add the final segment to the complete transcript, with single space
-        completeTranscript = (completeTranscript + ' ' + transcribedText).replace(/\s+/g, ' ').trim();
+        completeTranscript = (completeTranscript + " " + transcribedText)
+          .replace(/\s+/g, " ")
+          .trim();
         // Reset current partial
-        currentPartial = '';
+        currentPartial = "";
         // Display complete transcript
         updateTranscriptionUI(completeTranscript);
       }
     };
 
     // Add close button to the page
-    const closeButton = document.createElement('button');
-    closeButton.textContent = 'Close Window';
-    closeButton.addEventListener('click', () => window.close());
+    const closeButton = document.createElement("button");
+    closeButton.textContent = "Close Window";
+
+    closeButton.addEventListener("click", () => window.close());
     document.body.appendChild(closeButton);
 
     const audioDataCache = [];
@@ -154,20 +166,20 @@ async function startRecord(option) {
 
     recorder.onaudioprocess = async (event) => {
       if (!context || !isServerReady) return;
-      
+
       const inputData = event.inputBuffer.getChannelData(0);
       const audioData16kHz = resampleTo16kHZ(inputData, context.sampleRate);
-      
+
       // Convert Float32Array to Int16Array
       const audioDataInt16 = new Int16Array(audioData16kHz.length);
       for (let i = 0; i < audioData16kHz.length; i++) {
         const s = Math.max(-1, Math.min(1, audioData16kHz[i]));
-        audioDataInt16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        audioDataInt16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
       }
-      
+
       audioDataCache.push(inputData);
       socket.send(audioDataInt16.buffer);
-      console.log('Audio data sent to server');
+      console.log("Audio data sent to server");
     };
     mediaStream.connect(recorder);
     recorder.connect(context.destination);
@@ -180,7 +192,8 @@ async function startRecord(option) {
 // Add new function to stop recording
 function stopRecording() {
   if (window.recordingSession) {
-    const { stream, socket, recorder, context, mediaStream } = window.recordingSession;
+    const { stream, socket, recorder, context, mediaStream } =
+      window.recordingSession;
 
     // Close WebSocket
     if (socket) {
@@ -198,7 +211,7 @@ function stopRecording() {
 
     // Stop all tracks in the stream
     if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach((track) => track.stop());
     }
 
     // Close audio context
@@ -206,12 +219,32 @@ function stopRecording() {
       context.close();
     }
 
-    // Get the final transcription and download it
-    chrome.storage.local.get(['currentTranscription'], (result) => {
-      if (result.currentTranscription) {
-        downloadTranscription(result.currentTranscription);
+    // Get the final transcription and save it to local storage
+    chrome.storage.local.get(
+      ["currentTranscription", "transcriptions"],
+      (result) => {
+        const currentTranscription = result.currentTranscription || "";
+        const transcriptions = result.transcriptions || []; // Initialize as empty array if not found
+
+        if (currentTranscription) {
+          // Add the current transcription to the list
+          transcriptions.push({
+            id: generateUUID(),
+            text: currentTranscription,
+            timestamp: new Date().toISOString(),
+          });
+
+          // Save the updated list back to local storage
+          chrome.storage.local.set({ transcriptions }, () => {
+            console.log("Transcriptions saved:", transcriptions);
+            updateTranscriptionListUI(transcriptions);
+          });
+        }
+
+        // Clear the current transcription
+        chrome.storage.local.set({ currentTranscription: "" });
       }
-    });
+    );
 
     // Clear the recording session
     window.recordingSession = null;
@@ -242,8 +275,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true;
 });
 
+
+//Update the transcriptionUI
 function updateTranscriptionUI(text) {
-  const transcriptionContainer = document.getElementById("transcription-container");
+  const transcriptionContainer = document.getElementById(
+    "transcription-container"
+  );
   if (!transcriptionContainer) {
     const container = document.createElement("div");
     container.id = "transcription-container";
@@ -260,13 +297,14 @@ function updateTranscriptionUI(text) {
 }
 
 function downloadTranscription(text) {
-  const blob = new Blob([text], { type: 'text/plain' });
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const blob = new Blob([text], { type: "text/plain" });
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const filename = `transcription-${timestamp}.txt`;
-  
+  console.log(localStorage);
+
   chrome.downloads.download({
     url: URL.createObjectURL(blob),
     filename: filename,
-    saveAs: false
+    saveAs: false,
   });
 }

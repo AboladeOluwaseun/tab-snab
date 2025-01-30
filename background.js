@@ -5,12 +5,9 @@
  */
 function removeChromeTab(tabId) {
   return new Promise((resolve) => {
-    chrome.tabs.remove(tabId)
-      .then(resolve)
-      .catch(resolve);
+    chrome.tabs.remove(tabId).then(resolve).catch(resolve);
   });
 }
-
 
 /**
  * Executes a script file in a specific tab in Google Chrome.
@@ -24,13 +21,13 @@ function executeScriptInTab(tabId, file) {
       {
         target: { tabId },
         files: [file],
-      }, () => {
+      },
+      () => {
         resolve();
       }
     );
   });
 }
-
 
 /**
  * Opens the options page of the Chrome extension in a new pinned tab.
@@ -51,7 +48,6 @@ function openExtensionOptions() {
   });
 }
 
-
 /**
  * Retrieves the value associated with the specified key from the local storage in Google Chrome.
  * @param {string} key - The key of the value to retrieve from the local storage.
@@ -64,7 +60,6 @@ function getLocalStorageValue(key) {
     });
   });
 }
-
 
 /**
  * Sends a message to a specific tab in Google Chrome.
@@ -80,7 +75,6 @@ function sendMessageToTab(tabId, data) {
   });
 }
 
-
 /**
  * Delays the execution for a specified duration.
  * @param {number} ms - The duration to sleep in milliseconds (default: 0).
@@ -89,7 +83,6 @@ function sendMessageToTab(tabId, data) {
 function delayExecution(ms = 0) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
-
 
 /**
  * Sets a value associated with the specified key in the local storage of Google Chrome.
@@ -102,13 +95,13 @@ function setLocalStorageValue(key, value) {
     chrome.storage.local.set(
       {
         [key]: value,
-      }, () => {
+      },
+      () => {
         resolve(value);
       }
     );
   });
 }
-
 
 /**
  * Retrieves the tab object with the specified tabId.
@@ -116,13 +109,21 @@ function setLocalStorageValue(key, value) {
  * @returns {Promise<object>} - A Promise that resolves to the tab object.
  */
 async function getTab(tabId) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     chrome.tabs.get(tabId, (tab) => {
-      resolve(tab);
+      if (chrome.runtime.lastError) {
+        console.error("Error while getting tab:", chrome.runtime.lastError);
+        reject(
+          new Error(
+            `Failed to get tab with ID ${tabId}: ${chrome.runtime.lastError.message}`
+          )
+        );
+      } else {
+        resolve(tab);
+      }
     });
   });
 }
-
 
 /**
  * Starts the capture process for the specified tab.
@@ -132,36 +133,39 @@ async function getTab(tabId) {
 async function startCapture(options) {
   const { tabId, revAiToken } = options;
   const optionTabId = await getLocalStorageValue("optionTabId");
+
   if (optionTabId) {
-      await removeChromeTab(optionTabId);
+    await removeChromeTab(optionTabId);
   }
 
   try {
-      const currentTab = await getTab(tabId);
-      if (currentTab.audible) {
-          await setLocalStorageValue("currentTabId", currentTab.id);
-          await executeScriptInTab(currentTab.id, "content.js");
-          await delayExecution(500);
+    // Check if tabId is valid
+    console.log("Starting capture for tabId:", tabId);
+    const currentTab = await getTab(tabId);
 
-          const optionTab = await openExtensionOptions();
-          await setLocalStorageValue("optionTabId", optionTab.id);
-          await delayExecution(500);
+    if (currentTab && currentTab.audible) {
+      await setLocalStorageValue("currentTabId", currentTab.id);
+      await executeScriptInTab(currentTab.id, "content.js");
+      await delayExecution(500);
 
-          await sendMessageToTab(optionTab.id, {
-              type: "start_capture",
-              data: { 
-                  currentTabId: currentTab.id,
-                  revAiToken: revAiToken
-              },
-          });
-      } else {
-          console.log("No Audio");
-      }
+      const optionTab = await openExtensionOptions();
+      await setLocalStorageValue("optionTabId", optionTab.id);
+      await delayExecution(500);
+
+      await sendMessageToTab(optionTab.id, {
+        type: "start_capture",
+        data: {
+          currentTabId: currentTab.id,
+          revAiToken: revAiToken,
+        },
+      });
+    } else {
+      console.log("No audio detected in the current tab.");
+    }
   } catch (error) {
-      console.error("Error occurred while starting capture:", error);
+    console.error("Error occurred while starting capture:", error);
   }
 }
-
 
 /**
  * Stops the capture process and performs cleanup.
@@ -181,13 +185,17 @@ async function stopCapture() {
 
       // Send stop capture message to options page and wait for response
       await sendMessageToTab(optionTabId, {
-        type: "stop_capture"
+        type: "stop_capture",
       });
 
       // Update popup UI
-      chrome.runtime.sendMessage({ 
-        action: "toggleCaptureButtons", 
-        isCapturing: false 
+      chrome.runtime.sendMessage({
+        action: "toggleCaptureButtons",
+        isCapturing: false,
+      });
+      chrome.runtime.sendMessage({
+        action: "updateTranscriptionListUI",
+        data: { transcriptionList: [] },
       });
 
       // Update storage
@@ -198,7 +206,6 @@ async function stopCapture() {
   }
 }
 
-
 /**
  * Listens for messages from the runtime and performs corresponding actions.
  * @param {Object} message - The message received from the runtime.
@@ -207,20 +214,21 @@ chrome.runtime.onMessage.addListener(async (message) => {
   if (message.action === "startCapture") {
     startCapture(message);
     // sendResponse({status: "started"});
-    return true
+    return true;
   } else if (message.action === "stopCapture") {
     stopCapture();
     // sendResponse({status: "stopped"});
     return true;
   } else if (message.action === "updateSelectedLanguage") {
     const detectedLanguage = message.detectedLanguage;
-    chrome.runtime.sendMessage({ action: "updateSelectedLanguage", detectedLanguage });
+    chrome.runtime.sendMessage({
+      action: "updateSelectedLanguage",
+      detectedLanguage,
+    });
     chrome.storage.local.set({ selectedLanguage: detectedLanguage });
   } else if (message.action === "toggleCaptureButtons") {
     chrome.runtime.sendMessage({ action: "toggleCaptureButtons", data: false });
-    chrome.storage.local.set({ capturingState: { isCapturing: false } })
+    chrome.storage.local.set({ capturingState: { isCapturing: false } });
     stopCapture();
   }
 });
-
-
