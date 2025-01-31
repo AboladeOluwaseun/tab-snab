@@ -8,6 +8,11 @@ document.addEventListener("DOMContentLoaded", function () {
   const startButton = document.getElementById("startCapture");
   const stopButton = document.getElementById("stopCapture");
 
+  // Initial state setup
+  chrome.storage.local.get("capturingState", ({ capturingState }) => {
+    updateButtonStates(capturingState?.isCapturing || false);
+  });
+
   // Fetch and render transcriptions from storage
   function fetchAndRenderTranscriptions() {
     chrome.storage.local.get("transcriptions", ({ transcriptions }) => {
@@ -54,31 +59,15 @@ document.addEventListener("DOMContentLoaded", function () {
   // Disable or enable buttons based on capturing state and change styles
   function updateButtonStates(isCapturing) {
     chrome.storage.local.set({ capturingState: { isCapturing } }); // Save state to storage
-    if (isCapturing) {
-      // Change styles for "Start Capture" button
-      startButton.disabled = true;
-      startButton.style.backgroundColor = "#bbb";
-      startButton.style.color = "#666";
-      startButton.style.cursor = "not-allowed";
+    // Update button states
+    startButton.disabled = isCapturing;
+    stopButton.disabled = !isCapturing;
 
-      // Enable "Stop Capture" button
-      stopButton.disabled = false;
-      stopButton.style.backgroundColor = "#e74c3c";
-      stopButton.style.color = "#fff";
-      stopButton.style.cursor = "pointer";
-    } else {
-      // Reset styles for "Start Capture" button
-      startButton.disabled = false;
-      startButton.style.backgroundColor = "#4a90e2";
-      startButton.style.color = "#fff";
-      startButton.style.cursor = "pointer";
-
-      // Disable "Stop Capture" button
-      stopButton.disabled = true;
-      stopButton.style.backgroundColor = "#bbb";
-      stopButton.style.color = "#666";
-      stopButton.style.cursor = "not-allowed";
-    }
+    // Ensure correct styling by toggling classes
+    startButton.classList.toggle("disabled", isCapturing);
+    stopButton.classList.toggle("disabled", !isCapturing);
+    startButton.classList.toggle("active", !isCapturing);
+    stopButton.classList.toggle("active", isCapturing);
   }
 
   // Function to get the current active tab
@@ -101,8 +90,7 @@ document.addEventListener("DOMContentLoaded", function () {
       {
         action: "startCapture",
         tabId: currentTab.id,
-        revAiToken:
-          "02YNHWnpptcf8S8gntcfKVdpO9aIMtTm1D2guAlsSzEJRbKZF0CGU7gIJsgHnY6nI4yi230f1wKfPFgaqo6jV4VQLOgC8", // You'll need to add a way to configure this
+        revAiToken: CONFIG.REV_AI_API_KEY, // You'll need to add a way to configure this
       },
       () => {
         console.log("Start capture initiated.");
@@ -129,11 +117,6 @@ document.addEventListener("DOMContentLoaded", function () {
     } else if (message.action === "updateTranscriptions") {
       fetchAndRenderTranscriptions();
     }
-  });
-
-  // Initial state setup
-  chrome.storage.local.get("capturingState", ({ capturingState }) => {
-    updateButtonStates(capturingState?.isCapturing || false);
   });
 
   // Fetch and render transcriptions on popup open

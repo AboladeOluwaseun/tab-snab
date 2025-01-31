@@ -62,9 +62,32 @@ body {
   align-items: center;
 }
 
-.button:disabled {
-  background-color: #bbb;
-  cursor: not-allowed;
+
+/* Disabled Button */
+.button.disabled {
+  background-color: #bbb !important;
+  color: #666 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
+
+/* Stop Capture Button Active */
+#stopCapture.active {
+  background-color: #e74c3c !important; /* Red when active */
+  color: white !important;
+  cursor: pointer !important;
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Button Hover Effect */
+.button:hover:not(.disabled) {
+  background-color: #357abd;
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Stop Capture Hover Effect */
+#stopCapture.active:hover {
+  background-color: #c0392b !important; /* Darker red on hover */
 }
 
 .button:hover:not(:disabled),

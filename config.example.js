@@ -1,0 +1,4 @@
+const CONFIG = {
+    REV_AI_API_KEY: "your-api-key-here",
+  };
+  
