@@ -236,7 +236,7 @@ function stopRecording() {
 
           // Save the updated list back to local storage
           chrome.storage.local.set({ transcriptions }, () => {
-            console.log("Transcriptions saved:", transcriptions);
+            // console.log("Transcriptions saved:", transcriptions);
           });
         }
 
